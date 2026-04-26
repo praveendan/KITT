@@ -1,27 +1,26 @@
 // src/services/tts/ElevenLabsService.ts
 import { TTSService } from "./TTSService";
-import fetch from "node-fetch";
-import fs from "fs";
-import { exec } from "child_process";
-import { config } from "../../core/config";
+import { ElevenLabsClient, play } from '@elevenlabs/elevenlabs-js';
+import { ELEVEN_LABS_MODEL_ID, ELEVEN_LABS_OUTPUT_FORMAT, ELEVEN_LABS_VOICE_ID } from "../../utils/constants";
 
-export class ElevenLabsService implements TTSService {
+export class ElevenLabsService implements TTSService { 
+  private client: ElevenLabsClient;
+
+  constructor() {
+    this.client = new ElevenLabsClient();
+  }
+
   async speak(text: string): Promise<void> {
-    const res = await fetch(
-      "https://api.elevenlabs.io/v1/text-to-speech/NOpBlnGInO9m6vDvFkFC",
+    const audio = await this.client.textToSpeech.convert(
+      ELEVEN_LABS_VOICE_ID,
       {
-        method: "POST",
-        headers: {
-          "xi-api-key": config.elevenLabsApiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
+        text: text,
+        modelId: ELEVEN_LABS_MODEL_ID,
+        outputFormat: ELEVEN_LABS_OUTPUT_FORMAT,
       }
     );
+    await play(audio);
+    
 
-    const buffer = Buffer.from(await res.arrayBuffer());
-    fs.writeFileSync("output.mp3", buffer);
-
-    exec("afplay output.mp3"); // macOS
-  }
+   }
 }
