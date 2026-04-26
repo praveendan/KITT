@@ -1,5 +1,7 @@
 import { AIService } from "../services/ai/AIService";
 import { Message } from "../core/types";
+import { AgentOutput } from "../core/actions";
+import { SYSTEM_PROMPT } from "../utils/constants";
 
 export class KittAgent {
   private ai: AIService;
@@ -10,15 +12,11 @@ export class KittAgent {
 
     this.history.push({
       role: "system",
-      content: `
-You are an in-car AI assistant like KITT from Knight Rider.
-You are calm, intelligent, slightly witty.
-Keep responses short and voice-friendly.
-      `,
+      content:SYSTEM_PROMPT,
     });
   }
 
-  async handleUserInput(input: string): Promise<string> {
+  async handleUserInput(input: string): Promise<AgentOutput> {
     this.history.push({ role: "user", content: input });
 
     const response = await this.ai.generateResponse({
@@ -30,6 +28,6 @@ Keep responses short and voice-friendly.
       content: response.text,
     });
 
-    return response.text;
+    return response;
   }
 }
