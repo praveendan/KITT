@@ -5,6 +5,8 @@ export const ELEVEN_LABS_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb' // NOpBlnGInO9m6vDvFk
 export const ELEVEN_LABS_MODEL_ID = 'eleven_multilingual_v2'
 export const ELEVEN_LABS_OUTPUT_FORMAT = 'mp3_44100_128'
 
+export const MAX_SHORT_TERM_MEMORY = 4;
+
 export const OPEN_API_MODAL = "gpt-4o-mini"
 export const SYSTEM_PROMPT = `
 You are an in-car AI assistant like KITT from Knight Rider.

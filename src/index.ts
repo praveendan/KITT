@@ -5,12 +5,14 @@ import { KittAgent } from "./agents/KittAgent";
 import { VoiceOrchestrator } from "./orchestrator/VoiceOrchestrator";
 import { ActionExecutor } from "./services/actions/ActionExecutor";
 import { MemoryService } from "./services/memory/MemoryService";
+import { SummarizerService } from "./services/memory/SummarizerService";
 
 async function main() {
   const ai = new OpenAIService();
   const tts = new ElevenLabsService();
   const memory = new MemoryService();
-  const agent = new KittAgent(ai, memory);
+  const summarizer = new SummarizerService(ai);
+  const agent = new KittAgent(ai, memory, summarizer);
   const actions = new ActionExecutor();
 
   const orchestrator = new VoiceOrchestrator(agent, tts, actions);

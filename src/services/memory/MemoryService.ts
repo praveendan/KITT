@@ -1,17 +1,18 @@
 import fs from "fs";
-import { Message } from "../../core/types";
+import { MemoryState } from "../../core/memory";
 
 export class MemoryService {
   private filePath = "memory.json";
 
-  load(): Message[] {
-    if (!fs.existsSync(this.filePath)) return [];
+  load(): MemoryState {
+    if (!fs.existsSync(this.filePath)) {
+      return { shortTerm: [], summary: "" };
+    }
 
-    const raw = fs.readFileSync(this.filePath, "utf-8");
-    return JSON.parse(raw);
+    return JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
   }
 
-  save(messages: Message[]) {
-    fs.writeFileSync(this.filePath, JSON.stringify(messages, null, 2));
+  save(state: MemoryState) {
+    fs.writeFileSync(this.filePath, JSON.stringify(state, null, 2));
   }
 }
