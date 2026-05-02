@@ -33,3 +33,21 @@ Rules:
 - Keep text concise for speech
 `
 }];
+
+// Preferences
+export const CONFIDENCE_THRESHOLD = 0.8;
+export const PREFERENCE_EXTRACTION_PROMPT = `
+Extract user preferences from this message.
+
+Return JSON:
+{
+  "musicPreference": { "value": string, "confidence": number } | null,
+  "frequentDestination": { "value": string, "confidence": number } | null,
+  "drivingStyle": { "value": string, "confidence": number } | null
+}
+
+Confidence rules:
+- 0.9–1.0 = explicitly stated ("I love hip-hop")
+- 0.7–0.9 = strong implication
+- <0.7 = weak guess → ignore
+`;

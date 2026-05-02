@@ -4,6 +4,8 @@ export interface UserProfile {
   drivingStyle?: string;
 }
 
-export type ExtractedUserProfileFromInput = Omit<UserProfile, "frequentDestinations"> & {
-  frequentDestination: string; // for easier extraction, we ask for one destination at a time
+export interface ExtractedPreference {
+  musicPreference?: { value: string; confidence: number };
+  frequentDestination?: { value: string; confidence: number };
+  drivingStyle?: { value: string; confidence: number };
 }

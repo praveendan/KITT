@@ -1,7 +1,7 @@
 import { AIService } from "../services/ai/AIService";
 import { Message } from "../core/types";
 import { AgentOutput } from "../core/actions";
-import { MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE, SYSTEM_PROMPT } from "../utils/constants";
+import { CONFIDENCE_THRESHOLD, MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE, SYSTEM_PROMPT } from "../utils/constants";
 import { MemoryService } from "../services/memory/MemoryService";
 import { SummarizerService } from "../services/memory/SummarizerService";
 import { MemoryState } from "../core/memory";
@@ -30,19 +30,26 @@ export class KittAgent {
     // extract preferences from user input and update profile
     const extractedPrefs = await this.preferenceExtractor.extract(input);
 
-    if (extractedPrefs.musicPreference) {
-      this.profile.musicPreference = extractedPrefs.musicPreference;
+    if (
+      extractedPrefs.musicPreference &&
+      extractedPrefs.musicPreference.confidence >= CONFIDENCE_THRESHOLD
+    ) {
+      this.profile.musicPreference = extractedPrefs.musicPreference.value;
     }
 
     if (
       extractedPrefs.frequentDestination &&
-      !this.profile.frequentDestinations.includes(extractedPrefs.frequentDestination)
+      extractedPrefs.frequentDestination.confidence >= CONFIDENCE_THRESHOLD
     ) {
-      this.profile.frequentDestinations.push(extractedPrefs.frequentDestination);
-    }
-
-    if (extractedPrefs.drivingStyle) {
-      this.profile.drivingStyle = extractedPrefs.drivingStyle;
+      if (
+        !this.profile.frequentDestinations.includes(
+          extractedPrefs.frequentDestination.value
+        )
+      ) {
+        this.profile.frequentDestinations.push(
+          extractedPrefs.frequentDestination.value
+        );
+      }
     }
 
     this.profileService.save(this.profile);
