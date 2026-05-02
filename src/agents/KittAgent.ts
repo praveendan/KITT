@@ -1,29 +1,63 @@
 import { AIService } from "../services/ai/AIService";
 import { Message } from "../core/types";
 import { AgentOutput } from "../core/actions";
-import { MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE } from "../utils/constants";
+import { MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE, SYSTEM_PROMPT } from "../utils/constants";
 import { MemoryService } from "../services/memory/MemoryService";
 import { SummarizerService } from "../services/memory/SummarizerService";
 import { MemoryState } from "../core/memory";
+import { PreferenceExtractor } from "../services/profile/PreferenceExtractor";
+import { ProfileService } from "../services/profile/ProfileService";
+import { UserProfile } from "../core/profile";
 
 export class KittAgent {
   private state: MemoryState;
+  private profile: UserProfile;
 
   constructor(
     private ai: AIService,
     private memory: MemoryService,
-    private summarizer: SummarizerService
+    private summarizer: SummarizerService,
+    private profileService: ProfileService,
+    private preferenceExtractor: PreferenceExtractor,
   ) {
     this.state = this.memory.load();
+    this.profile = this.profileService.load();
   }
 
   async handleUserInput(input: string): Promise<AgentOutput> {
     this.state.shortTerm.push({ role: "user", content: input });
 
+    // extract preferences from user input and update profile
+    const extractedPrefs = await this.preferenceExtractor.extract(input);
+
+    if (extractedPrefs.musicPreference) {
+      this.profile.musicPreference = extractedPrefs.musicPreference;
+    }
+
+    if (
+      extractedPrefs.frequentDestination &&
+      !this.profile.frequentDestinations.includes(extractedPrefs.frequentDestination)
+    ) {
+      this.profile.frequentDestinations.push(extractedPrefs.frequentDestination);
+    }
+
+    if (extractedPrefs.drivingStyle) {
+      this.profile.drivingStyle = extractedPrefs.drivingStyle;
+    }
+
+    this.profileService.save(this.profile);
+    // Extraction ends here
+
     const contextMessages: Message[] = [
       {
         role: "system",
-        content: `You are KITT... Summary of past interactions: ${this.state.summary}`
+        content: `You are KITT.
+${SYSTEM_PROMPT}
+Summary of past interactions: ${this.state.summary}
+User profile:
+${JSON.stringify(this.profile, null, 2)}
+Use this to personalize responses.
+`
       },
       ...this.state.shortTerm
     ];
