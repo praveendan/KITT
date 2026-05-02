@@ -1,5 +1,5 @@
 // src/services/ai/AIService.ts
-import { AIContext, AIResponse } from "../../core/types";
+import { AIContext } from "../../core/types";
 import { AgentOutput } from "../../core/actions";
 
 export interface AIService {

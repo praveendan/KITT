@@ -1,7 +1,7 @@
 import { AIService } from "../services/ai/AIService";
 import { Message } from "../core/types";
 import { AgentOutput } from "../core/actions";
-import { MAX_SHORT_TERM_MEMORY, SYSTEM_PROMPT } from "../utils/constants";
+import { MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE } from "../utils/constants";
 import { MemoryService } from "../services/memory/MemoryService";
 import { SummarizerService } from "../services/memory/SummarizerService";
 import { MemoryState } from "../core/memory";
@@ -23,12 +23,7 @@ export class KittAgent {
     const contextMessages: Message[] = [
       {
         role: "system",
-        content: `
-  You are KITT...
-  
-  Summary of past interactions:
-  ${this.state.summary}
-        `
+        content: `You are KITT... Summary of past interactions: ${this.state.summary}`
       },
       ...this.state.shortTerm
     ];
@@ -42,16 +37,16 @@ export class KittAgent {
       content: response.text
     });
 
-    // 🔥 summarize if too long
+    // summarize if too long
     if (this.state.shortTerm.length > MAX_SHORT_TERM_MEMORY) {
-      const toSummarize = this.state.shortTerm.slice(0, 5);
+      const toSummarize = this.state.shortTerm.slice(0, NUM_OF_SHORT_TERM_TO_SUMMARIZE);
 
       this.state.summary = await this.summarizer.summarize(
         toSummarize,
         this.state.summary
       );
 
-      this.state.shortTerm = this.state.shortTerm.slice(5);
+      this.state.shortTerm = this.state.shortTerm.slice(NUM_OF_SHORT_TERM_TO_SUMMARIZE);
     }
 
     this.memory.save(this.state);

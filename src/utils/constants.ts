@@ -1,11 +1,11 @@
-import { BodyTextToSpeechFull } from "@elevenlabs/elevenlabs-js/api"
 import { Message } from "../core/types"
 
 export const ELEVEN_LABS_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb' // NOpBlnGInO9m6vDvFkFC - voice i need to use
 export const ELEVEN_LABS_MODEL_ID = 'eleven_multilingual_v2'
 export const ELEVEN_LABS_OUTPUT_FORMAT = 'mp3_44100_128'
 
-export const MAX_SHORT_TERM_MEMORY = 4;
+export const MAX_SHORT_TERM_MEMORY = 15;
+export const NUM_OF_SHORT_TERM_TO_SUMMARIZE = 5;
 
 export const OPEN_API_MODAL = "gpt-4o-mini"
 export const SYSTEM_PROMPT = `
