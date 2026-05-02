@@ -8,6 +8,7 @@ import { MemoryState } from "../core/memory";
 import { PreferenceExtractor } from "../services/profile/PreferenceExtractor";
 import { ProfileService } from "../services/profile/ProfileService";
 import { UserProfile } from "../core/profile";
+import { getLikelyDestination, getTimeContext } from "../utils/timeUtils";
 
 export class KittAgent {
   private state: MemoryState;
@@ -25,6 +26,9 @@ export class KittAgent {
   }
 
   async handleUserInput(input: string): Promise<AgentOutput> {
+    const { timeOfDay, dayType } = getTimeContext();
+    const likelyDestination = getLikelyDestination(this.profile);
+
     this.state.shortTerm.push({ role: "user", content: input });
 
     // extract preferences from user input and update profile
@@ -49,6 +53,11 @@ export class KittAgent {
         this.profile.frequentDestinations.push(
           extractedPrefs.frequentDestination.value
         );
+        this.profile.habits.push({
+          destination: extractedPrefs.frequentDestination.value,
+          timeOfDay,
+          dayType
+        });
       }
     }
 
@@ -63,6 +72,8 @@ ${SYSTEM_PROMPT}
 Summary of past interactions: ${this.state.summary}
 User profile:
 ${JSON.stringify(this.profile, null, 2)}
+Likely current destination:
+${likelyDestination || "unknown"}
 Use this to personalize responses.
 `
       },

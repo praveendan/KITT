@@ -6,7 +6,7 @@ export class ProfileService {
 
   load(): UserProfile {
     if (!fs.existsSync(this.filePath)) {
-      return { frequentDestinations: [] };
+      return { habits: [], frequentDestinations: [] };
     }
 
     return JSON.parse(fs.readFileSync(this.filePath, "utf-8"));
