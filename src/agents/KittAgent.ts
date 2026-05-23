@@ -14,6 +14,10 @@ export class KittAgent {
   private state: MemoryState;
   private profile: UserProfile;
 
+  getProfile(): UserProfile {
+    return this.profile;
+  }
+
   constructor(
     private ai: AIService,
     private memory: MemoryService,
