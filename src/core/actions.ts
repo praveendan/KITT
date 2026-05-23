@@ -3,6 +3,7 @@ export type ActionType =
   | "NAVIGATE"
   | "CALL_CONTACT"
   | "REPORT_STATUS"
+  | "GET_CAR_STATUS"
   | "NONE";
 
 export interface ActionPayloadMap {
@@ -10,6 +11,7 @@ export interface ActionPayloadMap {
   NAVIGATE: { destination: string };
   CALL_CONTACT: { name: string };
   REPORT_STATUS: {};
+  GET_CAR_STATUS: { detail: 'quick' | 'detailed' };
   NONE: {};
 }
 

@@ -23,7 +23,7 @@ Format:
 {
 "text": string,
 "action": {
-"type": "PLAY_MUSIC" | "NAVIGATE" | "CALL_CONTACT" | "REPORT_STATUS" | "NONE",
+"type": "PLAY_MUSIC" | "NAVIGATE" | "CALL_CONTACT" | "REPORT_STATUS" | "GET_CAR_STATUS" | "NONE",
 "payload": object
 }
 }
@@ -33,6 +33,22 @@ Rules:
 - Keep text concise for speech
 `
 }];
+
+// Telemetry Simulation
+export const TELEMETRY_IDLE_SPEED_RANGE: [number, number] = [0, 5];
+export const TELEMETRY_CITY_SPEED_RANGE: [number, number] = [5, 35];
+export const TELEMETRY_HIGHWAY_SPEED_RANGE: [number, number] = [40, 70];
+
+export const TELEMETRY_FUEL_CONSUMPTION_IDLE = 0.001;
+export const TELEMETRY_FUEL_CONSUMPTION_CITY = 0.015;
+export const TELEMETRY_FUEL_CONSUMPTION_HIGHWAY = 0.01;
+
+export const TELEMETRY_ENGINE_IDLE_TEMP = 60;
+export const TELEMETRY_ENGINE_CITY_TEMP = 85;
+export const TELEMETRY_ENGINE_HIGHWAY_TEMP = 95;
+
+export const TELEMETRY_ENGINE_HEAT_RATE = 1;
+export const TELEMETRY_ENGINE_COOL_RATE = 0.5;
 
 // Preferences
 export const CONFIDENCE_THRESHOLD = 0.8;

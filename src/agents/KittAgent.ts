@@ -9,6 +9,7 @@ import { PreferenceExtractor } from "../services/profile/PreferenceExtractor";
 import { ProfileService } from "../services/profile/ProfileService";
 import { UserProfile } from "../core/profile";
 import { getLikelyDestination, getTimeContext } from "../utils/timeUtils";
+import { CarTelemetryService } from "../services/telemetry/CarTelemetryService";
 
 export class KittAgent {
   private state: MemoryState;
@@ -24,6 +25,7 @@ export class KittAgent {
     private summarizer: SummarizerService,
     private profileService: ProfileService,
     private preferenceExtractor: PreferenceExtractor,
+    private telemetry: CarTelemetryService,
   ) {
     this.state = this.memory.load();
     this.profile = this.profileService.load();
@@ -32,6 +34,7 @@ export class KittAgent {
   async handleUserInput(input: string): Promise<AgentOutput> {
     const { timeOfDay, dayType } = getTimeContext();
     const likelyDestination = getLikelyDestination(this.profile);
+    const carTelemetry = await this.telemetry.getCurrentTelemetry();
 
     this.state.shortTerm.push({ role: "user", content: input });
 
@@ -78,7 +81,7 @@ User profile:
 ${JSON.stringify(this.profile, null, 2)}
 Likely current destination:
 ${likelyDestination || "unknown"}
-Use this to personalize responses.
+Use this to personalize responses and provide proactive assistance.
 `
       },
       ...this.state.shortTerm

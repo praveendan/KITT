@@ -2,15 +2,18 @@ import { KittAgent } from "../agents/KittAgent";
 import { ActionExecutor } from "../services/actions/ActionExecutor";
 import { ProactiveService } from "../services/engines/ProactiveService";
 import { TTSService } from "../services/tts/TTSService";
+import { CarTelemetryService } from "../services/telemetry/CarTelemetryService";
 
 export class VoiceOrchestrator {
   private cooldowns = new Map<string, number>();
+  private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private agent: KittAgent,
     private tts: TTSService,
     private actions: ActionExecutor,
-    private proactive: ProactiveService
+    private proactive: ProactiveService,
+    private telemetry?: CarTelemetryService
   ) { }
 
   async handleInput(input: string) {
@@ -23,34 +26,41 @@ export class VoiceOrchestrator {
     await this.actions.execute(result.action);
   }
 
+  startProactiveTicking(intervalMs: number = 30000) {
+    if (this.tickInterval) return;
+
+    this.tickInterval = setInterval(async () => {
+      await this.tick();
+    }, intervalMs);
+  }
+
+  stopProactiveTicking() {
+    if (this.tickInterval) {
+      clearInterval(this.tickInterval);
+      this.tickInterval = null;
+    }
+  }
+
   async tick() {
     const TEN_MINUTES = 10 * 60 * 1000;
 
-    const suggestion = this.proactive.shouldSuggestNavigation(
-      this.agent.getProfile()
+    const carTelemetry = this.telemetry ? await this.telemetry.getCurrentTelemetry() : undefined;
+    const suggestions = this.proactive.getProactiveSuggestions(
+      this.agent.getProfile(),
+      carTelemetry
     );
 
-    if (!suggestion) return;
+    for (const suggestion of suggestions) {
+      const key = `${suggestion.type}:${JSON.stringify(suggestion.context || {})}`;
+      const last = this.cooldowns.get(key) || 0;
 
-    /**
-     * Cooldown to avoid spamming suggestions
-     * this stores defferent cooldowns for different suggestions, so if one is triggered, it doesn't block others
-     * the key is in format "nav:destination" to allow for future expansion (e.g. "music:genre")
-     */
-    const key = `nav:${suggestion}`;
-    const last = this.cooldowns.get(key) || 0;
+      if (Date.now() - last < TEN_MINUTES) {
+        continue;
+      }
 
-    if (Date.now() - last < TEN_MINUTES) {
-      return;
+      console.log("KITT (proactive):", suggestion.message);
+      await this.tts.speak(suggestion.message);
+      this.cooldowns.set(key, Date.now());
     }
-    //cooldowns end
-
-    const text = `Want me to navigate to ${suggestion}?`;
-
-    console.log("KITT (proactive):", text);
-
-    await this.tts.speak(text);
-
-    this.cooldowns.set(key, Date.now());
   }
 }
