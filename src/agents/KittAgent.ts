@@ -37,6 +37,43 @@ export class KittAgent {
     this.profile = this.profileService.load();
   }
 
+  private updateProfileIfChanged(
+    extractedPrefs: Awaited<ReturnType<typeof this.preferenceExtractor.extract>>,
+    timeOfDay: ReturnType<typeof getTimeContext>["timeOfDay"],
+    dayType: ReturnType<typeof getTimeContext>["dayType"]
+  ): boolean {
+    let changed = false;
+
+    if (
+      extractedPrefs.musicPreference &&
+      extractedPrefs.musicPreference.confidence >= CONFIDENCE_THRESHOLD &&
+      this.profile.musicPreference !== extractedPrefs.musicPreference.value
+    ) {
+      this.profile.musicPreference = extractedPrefs.musicPreference.value;
+      changed = true;
+    }
+
+    if (
+      extractedPrefs.frequentDestination &&
+      extractedPrefs.frequentDestination.confidence >= CONFIDENCE_THRESHOLD &&
+      !this.profile.frequentDestinations.includes(
+        extractedPrefs.frequentDestination.value
+      )
+    ) {
+      this.profile.frequentDestinations.push(
+        extractedPrefs.frequentDestination.value
+      );
+      this.profile.habits.push({
+        destination: extractedPrefs.frequentDestination.value,
+        timeOfDay,
+        dayType
+      });
+      changed = true;
+    }
+
+    return changed;
+  }
+
   private async getCachedTelemetry(): Promise<CarTelemetry> {
     const now = Date.now();
     if (this.cachedTelemetry && now - this.lastTelemetryFetchTime < this.TELEMETRY_CACHE_MS) {
@@ -54,38 +91,12 @@ export class KittAgent {
 
     this.state.shortTerm.push({ role: "user", content: input });
 
-    // extract preferences from user input and update profile
     const extractedPrefs = await this.preferenceExtractor.extract(input);
+    const profileChanged = this.updateProfileIfChanged(extractedPrefs, timeOfDay, dayType);
 
-    if (
-      extractedPrefs.musicPreference &&
-      extractedPrefs.musicPreference.confidence >= CONFIDENCE_THRESHOLD
-    ) {
-      this.profile.musicPreference = extractedPrefs.musicPreference.value;
+    if (profileChanged) {
+      this.profileService.save(this.profile);
     }
-
-    if (
-      extractedPrefs.frequentDestination &&
-      extractedPrefs.frequentDestination.confidence >= CONFIDENCE_THRESHOLD
-    ) {
-      if (
-        !this.profile.frequentDestinations.includes(
-          extractedPrefs.frequentDestination.value
-        )
-      ) {
-        this.profile.frequentDestinations.push(
-          extractedPrefs.frequentDestination.value
-        );
-        this.profile.habits.push({
-          destination: extractedPrefs.frequentDestination.value,
-          timeOfDay,
-          dayType
-        });
-      }
-    }
-
-    this.profileService.save(this.profile);
-    // Extraction ends here
 
     const contextMessages: Message[] = [
       {
