@@ -48,6 +48,11 @@ Rules:
 `
 }];
 
+export const conversationalTasks = {
+  RESPOND_TO_USER: "Respond conversationally to the user.",
+  GENERATE_PROACTIVE_MESSAGE: "Generate a brief proactive driving assistant message"
+}
+
 // Telemetry Simulation
 export const TELEMETRY_IDLE_SPEED_RANGE: [number, number] = [0, 5];
 export const TELEMETRY_CITY_SPEED_RANGE: [number, number] = [5, 35];
