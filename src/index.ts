@@ -31,12 +31,46 @@ async function main() {
 
   const orchestrator = new VoiceOrchestrator(agent, tts, actions, proactive, telemetry);
 
-  const input = process.argv.slice(2).filter(arg => !arg.startsWith('scenario=')).join(" ");
-
   // Start proactive suggestions every 30 seconds
   orchestrator.startProactiveTicking(30000);
 
-  await orchestrator.handleInput(input);
+  // If there's initial input from command line, handle it first
+  const input = process.argv.slice(2).filter(arg => !arg.startsWith('scenario=')).join(" ");
+  if (input.trim()) {
+    await orchestrator.handleInput(input);
+  }
+
+  // Start continuous listening loop
+  await startListeningLoop(orchestrator);
+}
+
+async function startListeningLoop(orchestrator: any) {
+  const readline = require("readline");
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: false
+  });
+
+  console.log("\n🚗 KITT is online and listening. Speak your command (or type 'exit' to quit)...\n");
+
+  rl.on("line", async (input: string) => {
+    if (input.toLowerCase() === "exit") {
+      orchestrator.stopProactiveTicking();
+      console.log("KITT: Signing off. Safe travels!");
+      rl.close();
+      process.exit(0);
+    }
+
+    if (input.trim()) {
+      await orchestrator.handleInput(input);
+    }
+  });
+
+  rl.on("close", () => {
+    orchestrator.stopProactiveTicking();
+    process.exit(0);
+  });
 }
 
 main();

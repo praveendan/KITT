@@ -25,8 +25,8 @@ export class SimulationTelemetryService implements CarTelemetryService {
 
   private initializeTelemetry(): CarTelemetry {
     return {
-      speed: 0,
-      fuel: 75,
+      speed: 70,
+      fuel: 22,
       engineTemp: 20,
       location: { lat: 37.7749, lng: -122.4194 }, // San Francisco
       odometer: 42000,

@@ -50,7 +50,7 @@ export class ProactiveService {
     if (telemetry && telemetry.fuel < 20) {
       suggestions.push({
         type: "reminder",
-        message: `⚠️ Fuel is running low at ${telemetry.fuel.toFixed(0)}%. You might want to refuel soon.`,
+        message: `Fuel is running low at ${telemetry.fuel.toFixed(0)}%. You might want to refuel soon.`,
         context: { fuel: telemetry.fuel }
       });
     }
