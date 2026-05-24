@@ -1,7 +1,7 @@
 import { AIService } from "../services/ai/AIService";
 import { Message } from "../core/types";
 import { AgentOutput } from "../core/actions";
-import { CONFIDENCE_THRESHOLD, MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE, SYSTEM_PROMPT } from "../utils/constants";
+import { CONFIDENCE_THRESHOLD, MAX_SHORT_TERM_MEMORY, NUM_OF_SHORT_TERM_TO_SUMMARIZE } from "../utils/constants";
 import { MemoryService } from "../services/memory/MemoryService";
 import { SummarizerService } from "../services/memory/SummarizerService";
 import { MemoryState } from "../core/memory";
@@ -11,6 +11,7 @@ import { UserProfile } from "../core/profile";
 import { getLikelyDestination, getTimeContext } from "../utils/timeUtils";
 import { CarTelemetryService } from "../services/telemetry/CarTelemetryService";
 import { ProactiveSuggestion } from "../services/engines/ProactiveService";
+import { PromptBuilder } from "../services/prompts/PromptBuilder";
 
 export class KittAgent {
   private state: MemoryState;
@@ -75,15 +76,16 @@ export class KittAgent {
     const contextMessages: Message[] = [
       {
         role: "system",
-        content: `You are KITT.
-${SYSTEM_PROMPT}
-Summary of past interactions: ${this.state.summary}
-User profile:
-${JSON.stringify(this.profile, null, 2)}
-Likely current destination:
-${likelyDestination || "unknown"}
-Use this to personalize responses and provide proactive assistance.
-`
+        content: `
+        ${PromptBuilder.buildBasePrompt()}
+        ${PromptBuilder.buildContextPrompt({
+          summary: this.state.summary,
+          profile: this.profile,
+          telemetry: carTelemetry,
+          likelyDestination
+        })}
+        Task: Respond conversationally to the user.
+        `
       },
       ...this.state.shortTerm
     ];
@@ -118,15 +120,14 @@ Use this to personalize responses and provide proactive assistance.
     const likelyDestination = getLikelyDestination(this.profile);
     const carTelemetry = await this.telemetry.getCurrentTelemetry();
 
-    const systemPrompt = `${SYSTEM_PROMPT}
-Current context:
-- User profile: ${JSON.stringify(this.profile, null, 2)}
-- Current driving: Speed ${carTelemetry.speed.toFixed(0)} mph, fuel at ${carTelemetry.fuel.toFixed(0)}%
-- Likely destination: ${likelyDestination || "unknown"}
-
-Generate a BRIEF (1-2 sentences), natural proactive message based on the suggestion below.
-Keep it friendly and voice-friendly. Don't ask questions unless necessary.
-Don't include JSON or actions—just the message text.`;
+    const systemPrompt = `
+    ${PromptBuilder.buildBasePrompt()}
+    ${PromptBuilder.buildContextPrompt({
+      profile: this.profile,
+      telemetry: carTelemetry,
+      likelyDestination
+    })}
+    `;
 
     const response = await this.ai.generateResponse({
       messages: [
