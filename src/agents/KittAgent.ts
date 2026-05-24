@@ -10,6 +10,7 @@ import { ProfileService } from "../services/profile/ProfileService";
 import { UserProfile } from "../core/profile";
 import { getLikelyDestination, getTimeContext } from "../utils/timeUtils";
 import { CarTelemetryService } from "../services/telemetry/CarTelemetryService";
+import { ProactiveSuggestion } from "../services/engines/ProactiveService";
 
 export class KittAgent {
   private state: MemoryState;
@@ -111,5 +112,35 @@ Use this to personalize responses and provide proactive assistance.
     this.memory.save(this.state);
 
     return response;
+  }
+
+  async generateProactiveMessage(suggestion: ProactiveSuggestion): Promise<string> {
+    const likelyDestination = getLikelyDestination(this.profile);
+    const carTelemetry = await this.telemetry.getCurrentTelemetry();
+
+    const systemPrompt = `${SYSTEM_PROMPT}
+Current context:
+- User profile: ${JSON.stringify(this.profile, null, 2)}
+- Current driving: Speed ${carTelemetry.speed.toFixed(0)} mph, fuel at ${carTelemetry.fuel.toFixed(0)}%
+- Likely destination: ${likelyDestination || "unknown"}
+
+Generate a BRIEF (1-2 sentences), natural proactive message based on the suggestion below.
+Keep it friendly and voice-friendly. Don't ask questions unless necessary.
+Don't include JSON or actions—just the message text.`;
+
+    const response = await this.ai.generateResponse({
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt
+        },
+        {
+          role: "user",
+          content: `Generate a proactive message for this suggestion: ${JSON.stringify(suggestion)}`
+        }
+      ]
+    });
+
+    return response.text.trim();
   }
 }

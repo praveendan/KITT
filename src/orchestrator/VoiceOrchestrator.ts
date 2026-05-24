@@ -58,8 +58,9 @@ export class VoiceOrchestrator {
         continue;
       }
 
-      console.log("KITT (proactive):", suggestion.message);
-      await this.tts.speak(suggestion.message);
+      const naturalMessage = await this.agent.generateProactiveMessage(suggestion);
+      console.log("KITT (proactive):", naturalMessage);
+      await this.tts.speak(naturalMessage);
       this.cooldowns.set(key, Date.now());
     }
   }

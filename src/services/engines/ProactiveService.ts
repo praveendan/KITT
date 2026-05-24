@@ -1,6 +1,7 @@
 import { UserProfile } from "../../core/profile";
 import { getTimeContext } from "../../utils/timeUtils";
 import { CarTelemetry } from "../../core/telemetry";
+import { MessageGenerator } from "./MessageGenerator";
 
 export type ProactiveTrigger = "navigation" | "music" | "reminder" | "weather" | "status";
 
@@ -23,7 +24,7 @@ export class ProactiveService {
     if (habit?.destination) {
       suggestions.push({
         type: "navigation",
-        message: `Want me to navigate to ${habit.destination}? Based on your usual routine at this time.`,
+        message: MessageGenerator.generateNavigationSuggestion(habit.destination),
         context: { destination: habit.destination }
       });
     }
@@ -32,7 +33,7 @@ export class ProactiveService {
     if (profile.musicPreference && (timeOfDay === "morning" || timeOfDay === "evening")) {
       suggestions.push({
         type: "music",
-        message: `I could play some ${profile.musicPreference} music for you.`,
+        message: MessageGenerator.generateMusicSuggestion(profile.musicPreference),
         context: { genre: profile.musicPreference }
       });
     }
@@ -41,7 +42,7 @@ export class ProactiveService {
     if (telemetry && telemetry.speed > 50) {
       suggestions.push({
         type: "status",
-        message: `You're cruising at ${telemetry.speed.toFixed(0)} mph. Fuel is at ${telemetry.fuel.toFixed(0)}%, engine running smoothly at ${telemetry.engineTemp.toFixed(0)}°C.`,
+        message: MessageGenerator.generateStatusUpdate(telemetry),
         context: { telemetry }
       });
     }
@@ -50,7 +51,7 @@ export class ProactiveService {
     if (telemetry && telemetry.fuel < 20) {
       suggestions.push({
         type: "reminder",
-        message: `Fuel is running low at ${telemetry.fuel.toFixed(0)}%. You might want to refuel soon.`,
+        message: MessageGenerator.generateLowFuelWarning(telemetry.fuel),
         context: { fuel: telemetry.fuel }
       });
     }
