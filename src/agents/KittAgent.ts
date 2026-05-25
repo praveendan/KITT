@@ -33,46 +33,8 @@ export class KittAgent {
     private preferenceExtractor: PreferenceExtractor,
     private telemetry: CarTelemetryService,
   ) {
-    const loadedState = this.memory.load();
-    this.state = this.isValidMemoryState(loadedState) ? loadedState : this.getDefaultMemoryState();
-
-    const loadedProfile = this.profileService.load();
-    this.profile = this.isValidProfile(loadedProfile) ? loadedProfile : this.getDefaultProfile();
-  }
-
-  private isValidMemoryState(state: any): boolean {
-    return state &&
-      Array.isArray(state.shortTerm) &&
-      typeof state.summary === 'string' &&
-      state.shortTerm.every((msg: any) =>
-        typeof msg.role === 'string' &&
-        typeof msg.content === 'string'
-      );
-  }
-
-  private isValidProfile(profile: any): boolean {
-    return profile &&
-      Array.isArray(profile.habits) &&
-      Array.isArray(profile.frequentDestinations) &&
-      profile.habits.every((habit: any) =>
-        typeof habit.destination === 'string' &&
-        typeof habit.timeOfDay === 'string' &&
-        typeof habit.dayType === 'string'
-      );
-  }
-
-  private getDefaultMemoryState(): MemoryState {
-    return {
-      shortTerm: [],
-      summary: ""
-    };
-  }
-
-  private getDefaultProfile(): UserProfile {
-    return {
-      habits: [],
-      frequentDestinations: []
-    };
+    this.state = this.memory.load();
+    this.profile = this.profileService.load();
   }
 
   private updateProfileIfChanged(
