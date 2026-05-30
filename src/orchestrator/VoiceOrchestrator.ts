@@ -30,7 +30,11 @@ export class VoiceOrchestrator {
     if (this.tickInterval) return;
 
     this.tickInterval = setInterval(async () => {
-      await this.tick();
+      try {
+        await this.tick();
+      } catch (error) {
+        console.error("Proactive tick error:", error instanceof Error ? error.message : String(error));
+      }
     }, intervalMs);
   }
 

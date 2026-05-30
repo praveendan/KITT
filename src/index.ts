@@ -11,8 +11,13 @@ import { ProfileService } from "./services/profile/ProfileService";
 import { ProactiveService } from "./services/engines/ProactiveService";
 import { SimulationTelemetryService } from "./services/telemetry/SimulationTelemetryService";
 import { DrivingScenario } from "./core/telemetry";
+import { LoggerService } from "./services/logger/LoggerService";
+import { Logger } from "./core/logger";
 
 async function main() {
+  const logger = new LoggerService();
+  logger.info("Main", "Initializing KITT...");
+
   const ai = new OpenAIService();
   const tts = new ElevenLabsService();
   const memory = new MemoryService();
@@ -26,7 +31,7 @@ async function main() {
   const scenario = (scenarioArg?.split('=')[1] || 'city') as DrivingScenario;
   const telemetry = new SimulationTelemetryService(scenario);
 
-  const agent = new KittAgent(ai, memory, summarizer, profileService, preferenceExtractor, telemetry);
+  const agent = new KittAgent(ai, memory, summarizer, profileService, preferenceExtractor, telemetry, logger);
   const actions = new ActionExecutor(telemetry);
 
   const orchestrator = new VoiceOrchestrator(agent, tts, actions, proactive, telemetry);
@@ -41,10 +46,10 @@ async function main() {
   }
 
   // Start continuous listening loop
-  await startListeningLoop(orchestrator);
+  await startListeningLoop(orchestrator, logger);
 }
 
-async function startListeningLoop(orchestrator: any) {
+async function startListeningLoop(orchestrator: VoiceOrchestrator, logger: Logger) {
   const readline = require("readline");
   const rl = readline.createInterface({
     input: process.stdin,
@@ -58,12 +63,17 @@ async function startListeningLoop(orchestrator: any) {
     if (input.toLowerCase() === "exit") {
       orchestrator.stopProactiveTicking();
       console.log("KITT: Signing off. Safe travels!");
+      logger.info("Main", "KITT is shutting down");
       rl.close();
       process.exit(0);
     }
 
     if (input.trim()) {
-      await orchestrator.handleInput(input);
+      try {
+        await orchestrator.handleInput(input);
+      } catch (error) {
+        logger.error("Main", "Error handling user input", { error: error instanceof Error ? error.message : String(error) });
+      }
     }
   });
 
@@ -73,4 +83,7 @@ async function startListeningLoop(orchestrator: any) {
   });
 }
 
-main();
+main().catch(error => {
+  console.error("Fatal error:", error);
+  process.exit(1);
+});

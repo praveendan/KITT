@@ -13,6 +13,7 @@ import { CarTelemetryService } from "../services/telemetry/CarTelemetryService";
 import { CarTelemetry } from "../core/telemetry";
 import { ProactiveSuggestion } from "../services/engines/ProactiveService";
 import { PromptBuilder } from "../services/prompts/PromptBuilder";
+import { Logger } from "../core/logger";
 
 export class KittAgent {
   private state: MemoryState;
@@ -32,9 +33,14 @@ export class KittAgent {
     private profileService: ProfileService,
     private preferenceExtractor: PreferenceExtractor,
     private telemetry: CarTelemetryService,
+    private logger: Logger,
   ) {
     this.state = this.memory.load();
     this.profile = this.profileService.load();
+    this.logger.info("KittAgent", "Agent initialized", {
+      memorySize: this.state.shortTerm.length,
+      destinations: this.profile.frequentDestinations.length
+    });
   }
 
   private updateProfileIfChanged(
@@ -85,6 +91,8 @@ export class KittAgent {
   }
 
   async handleUserInput(input: string): Promise<AgentOutput> {
+    this.logger.debug("KittAgent", "Processing user input", { inputLength: input.length });
+
     const { timeOfDay, dayType } = getTimeContext();
     const likelyDestination = getLikelyDestination(this.profile);
     const carTelemetry = await this.getCachedTelemetry();
@@ -96,6 +104,10 @@ export class KittAgent {
 
     if (profileChanged) {
       this.profileService.save(this.profile);
+      this.logger.info("KittAgent", "User profile updated", {
+        musicPreference: extractedPrefs.musicPreference?.value,
+        newDestination: extractedPrefs.frequentDestination?.value
+      });
     }
 
     const contextMessages: Message[] = [
@@ -126,6 +138,11 @@ export class KittAgent {
 
     // summarize if too long
     if (this.state.shortTerm.length > MAX_SHORT_TERM_MEMORY) {
+      this.logger.info("KittAgent", "Summarizing short-term memory", {
+        beforeLength: this.state.shortTerm.length,
+        summarizing: NUM_OF_SHORT_TERM_TO_SUMMARIZE
+      });
+
       const toSummarize = this.state.shortTerm.slice(0, NUM_OF_SHORT_TERM_TO_SUMMARIZE);
 
       this.state.summary = await this.summarizer.summarize(
@@ -142,6 +159,8 @@ export class KittAgent {
   }
 
   async generateProactiveMessage(suggestion: ProactiveSuggestion): Promise<string> {
+    this.logger.debug("KittAgent", "Generating proactive message", { type: suggestion.type });
+
     const likelyDestination = getLikelyDestination(this.profile);
     const carTelemetry = await this.getCachedTelemetry();
 
@@ -168,6 +187,7 @@ export class KittAgent {
       ]
     });
 
+    this.logger.info("KittAgent", "Proactive message generated", { type: suggestion.type });
     return response.text.trim();
   }
 }
