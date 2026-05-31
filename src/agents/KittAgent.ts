@@ -90,6 +90,28 @@ export class KittAgent {
     return this.cachedTelemetry;
   }
 
+  private async summarizeAndSaveMemory() {
+    // summarize if too long
+    if (this.state.shortTerm.length > MAX_SHORT_TERM_MEMORY) {
+      this.logger.info("KittAgent", "Summarizing short-term memory", {
+        beforeLength: this.state.shortTerm.length,
+        summarizing: NUM_OF_SHORT_TERM_TO_SUMMARIZE
+      });
+
+      const toSummarize = this.state.shortTerm.slice(0, NUM_OF_SHORT_TERM_TO_SUMMARIZE);
+
+      this.state.summary = await this.summarizer.summarize(
+        toSummarize,
+        this.state.summary
+      );
+
+      this.state.shortTerm = this.state.shortTerm.slice(NUM_OF_SHORT_TERM_TO_SUMMARIZE);
+    }
+
+    this.memory.save(this.state);
+
+  }
+
   async handleUserInput(input: string): Promise<AgentOutput> {
     this.logger.debug("KittAgent", "Processing user input", { inputLength: input.length });
 
@@ -136,24 +158,7 @@ export class KittAgent {
       content: response.text
     });
 
-    // summarize if too long
-    if (this.state.shortTerm.length > MAX_SHORT_TERM_MEMORY) {
-      this.logger.info("KittAgent", "Summarizing short-term memory", {
-        beforeLength: this.state.shortTerm.length,
-        summarizing: NUM_OF_SHORT_TERM_TO_SUMMARIZE
-      });
-
-      const toSummarize = this.state.shortTerm.slice(0, NUM_OF_SHORT_TERM_TO_SUMMARIZE);
-
-      this.state.summary = await this.summarizer.summarize(
-        toSummarize,
-        this.state.summary
-      );
-
-      this.state.shortTerm = this.state.shortTerm.slice(NUM_OF_SHORT_TERM_TO_SUMMARIZE);
-    }
-
-    this.memory.save(this.state);
+    await this.summarizeAndSaveMemory();
 
     return response;
   }
@@ -167,6 +172,7 @@ export class KittAgent {
     const systemPrompt = [
       PromptBuilder.buildBasePrompt(),
       PromptBuilder.buildContextPrompt({
+        summary: this.state.summary,
         profile: this.profile,
         telemetry: carTelemetry,
         likelyDestination
@@ -186,6 +192,13 @@ export class KittAgent {
         }
       ]
     });
+
+    this.state.shortTerm.push({
+      role: "assistant",
+      content: response.text
+    });
+
+    await this.summarizeAndSaveMemory();
 
     this.logger.info("KittAgent", "Proactive message generated", { type: suggestion.type });
     return response.text.trim();
